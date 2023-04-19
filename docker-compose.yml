@@ -1,0 +1,49 @@
+version: '1'
+
+services:
+  nginx:
+    restart: always
+    depends_on:
+      - app
+    container_name: nginx
+    build: ./nginx/
+    ports:
+      - "8000:8000"
+    networks:
+      - frontend
+
+  postgresql:
+    restart: always
+    container_name: db
+    image: postgres:latest
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: "trust"
+    expose:
+      - "5432"
+    networks:
+      - backend
+    volumes:
+      - pgdata:/var/lib/postgresql/data/
+
+  app:
+    restart: always
+    container_name: web
+    depends_on:
+      - postgresql
+    environment:
+      DEBUG: 'true'
+    build: ./web
+    expose:
+      - "8000"
+    networks:
+      - frontend
+      - backend
+    command: /usr/local/bin/gunicorn --chdir /usr/src/app/django_blog wsgi:application -w 1 -b :8000
+
+
+volumes:
+  pgdata:
+
+networks:
+  frontend:
+  backend:
